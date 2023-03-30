@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+
+</head>
+<body>
+<nav class="navbar navbar-expand-lg bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/"><img src="{% static 'crblog/logo.png' %}" width="80px" height="auto"></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="/" >Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" aria-current="page" href="/about/" >About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/profile/">Profile</a>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            Auth
+          </a>
+          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+            <li><a class="dropdown-item" href="/login/">Login</a></li>
+            <li><a class="dropdown-item" href="/register/">Registrartion</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div id="main" style="text-align: center;">
+    <div id="inline" style="display: inline-block">
+
+    </div>
+    <hr>
+    <div id="message">
+
+    </div>
+    <hr>
+    <div>
+        <p>написать коментарий: </p>  <textarea id="mes" name="w3review" rows="4" cols="50"></textarea> <br>
+        <button id="b">готово</button> <br>
+    </div>
+    <hr>
+    <div id ="comments">
+        <h2>Коментарии:</h2>
+    </div>
+</div>
+</body>
+</html>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script>
+$(document).ready(function(){
+   $.ajax({
+     method: 'GET',
+     url: '/api/v1/blog/{{object.id}}/',
+     success:function(data) {
+            $( "#inline" ).append(`<h2>${data.author}: ${data.title}</h2>`)
+            $( "#message" ).append(`<p>${data.message}</p>`)
+            for (var i in data.reviews) {
+                   $( "#comments" ).append( ` <h3><span style="font-weight: normal;" >${data.reviews[i].author}: </span>${data.reviews[i].text} </h3>` );
+            }
+   	}
+   })
+$('#b').click(function(){
+   $.ajax({
+     method: 'POST',
+     url: '/auth/jwt/refresh/',
+     data: {
+        'refresh': localStorage.getItem('RefreshAuthToken'),
+     },
+     success:function(data1) {
+        $.ajax({
+        method: 'GET',
+        url: `/auth/users/me/`,
+        headers: {
+            'Authorization': `Bearer ${data1.access}`,
+        },
+        success:function(data2) {
+           $.ajax({
+                method: 'POST',
+                url: `/api/v1/reviewCreate/`,
+                data: {
+                    'text': $( "#mes" ).val(),
+                    'author': data2.id,
+                    'blog': {{object.id}},
+                },
+                headers: {
+                    'Authorization': `Bearer ${data1.access}`,
+                },
+                success:function(data3) {
+                    window.location.reload()
+                },
+                error: function(data) {
+                    console.log(data)
+                }
+           })
+        }
+        })
+    },
+    error:function(data1) {
+    window.location.assign("/login/")
+   	},
+   })
+})
+})
+
+</script>
